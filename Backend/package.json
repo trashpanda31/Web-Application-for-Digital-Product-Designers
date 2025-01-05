@@ -1,0 +1,31 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "backend",
+  "main": "src/app.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "author": "Eliass Rozenbergs st79687",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.3",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {
+    "eslint": "^9.17.0",
+    "nodemon": "^3.1.9"
+  }
+}
