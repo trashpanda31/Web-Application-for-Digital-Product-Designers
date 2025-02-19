@@ -3,18 +3,20 @@
   "version": "1.0.0",
   "description": "backend",
   "main": "src/app.js",
+  "type": "module",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
   "author": "Eliass Rozenbergs st79687",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "eslint": "^9.17.0",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "rollup": "^4.34.8"
   }
 }

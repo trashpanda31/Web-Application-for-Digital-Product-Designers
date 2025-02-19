@@ -1,8 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { register, login, logout } from '../controllers/authController.js';
+
 const router = express.Router();
 
-router.get('/test', (req, res) => {
-    res.send('Auth route работает!');
-});
+router.post('/register', register);
+router.post('/logout', logout);
+router.post('/login', login);
 
-module.exports = router; // Должно быть именно `module.exports = router;`
+export default router; // Используем export default вместо module.exports

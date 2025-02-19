@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
 router.get('/test', (req, res) => {
     res.send('Auth route работает!');
 });
 
-module.exports = router; // Должно быть именно `module.exports = router;`
+export default router;
