@@ -5,10 +5,10 @@ const UserSchema = new mongoose.Schema(
     username: { type: String, required: true },
     password: { type: String, required: true },
     email: { type: String, required: true },
+    refreshToken: { type: String }
   },
   { timestamps: true }
 );
 
-// Экспортируем модель корректным способом для ESM
 const User = mongoose.model('User', UserSchema);
-export default User;
+export default mongoose.model('User', UserSchema);
