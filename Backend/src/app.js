@@ -3,12 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import multer from 'multer';
+import csrf from 'csurf';
 import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import imageRoutes from './routes/imageRoutes.js';
+import { errorHandler } from './middlewares/errorMiddleware.js';
 
 dotenv.config();
 
@@ -20,18 +22,23 @@ app.use(cors({
     credentials: true
 }));
 
-// Подключаем cookieParser ДО обработки JSON
 app.use(cookieParser());
-
-// Основные middleware
 app.use(helmet());
 app.use(express.json());
+app.use(errorHandler);
 
-// Настройка multer для загрузки файлов
+const csrfProtection = csrf({cookie: true});
+app.use(csrfProtection);
+app.use((req, res, next) => {
+    console.log('🔍 Запрос:', req.method, req.url);
+    console.log('🔍 Cookies:', req.cookies);
+    console.log('🔍 Заголовки:', req.headers);
+    next();
+});
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Роуты API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
@@ -44,6 +51,17 @@ app.use((err, req, res, next) => {
         message: err.message || 'Something went wrong on the server',
     });
 });
+
+app.use((req, res, next) => {
+    if (!req.secure) {
+        return res.redirect("https://" + req.headers.host + req.url);
+    }
+    next();
+});
+
+app.get('/csrf-token', (req, res) => {
+    res.json({csrfToken: req.csrfToken});
+})
 
 // Тестовый маршрут
 app.get('/', (req, res) => {

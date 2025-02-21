@@ -13,25 +13,47 @@ const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
 export const register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, firstName, lastName } = req.body;
 
-    // Проверка на существующего пользователя
+    // 1️⃣ Проверяем, переданы ли все обязательные поля
+    if (!firstName || !lastName || !username || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // 2️⃣ Проверяем, существует ли уже такой пользователь
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Хеширование пароля
+    // 3️⃣ Хешируем пароль
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password: hashedPassword });
+
+    // 4️⃣ Создаем нового пользователя (аватар пока пустой)
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      firstName,   // 👤 Обязательное поле
+      lastName,    // 👤 Обязательное поле
+      avatar: '',  // 🖼 Оставляем пустым, можно обновить позже
+    });
+
     await user.save();
 
-    res.status(201).json({ success: true, message: 'User registered successfully' });
+    // 5️⃣ Отправляем успешный ответ
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      userId: user._id,
+    });
+
   } catch (error) {
     console.error('Register Error:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
 
 export const login = async (req, res) => {
   try {
