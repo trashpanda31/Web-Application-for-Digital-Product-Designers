@@ -1,7 +1,10 @@
-export const getUserProfile = async (req, res) => {
+import { log } from '../utils/logger.js';
+
+export const getUserProfile = async (req, res, next) => {
   try {
+    log(`User profile requested: ${req.user.id}`);
     res.json({ message: 'User profile route works' });
-    }catch(error) {
-      res.status(500).json({ message: 'Server Error' });
+  } catch (error) {
+    next(error);
   }
-}
+};

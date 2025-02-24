@@ -10,29 +10,27 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import imageRoutes from './routes/imageRoutes.js';
-import { errorHandler } from './middlewares/errorMiddleware.js';
+import errorHandler  from './middlewares/errorMiddleware.js';
+import { log } from './utils/logger.js';
 
 dotenv.config();
 
 const app = express();
 
-// Настройка CORS перед всеми роутами
 app.use(cors({
-    origin: 'http://localhost:5000', // Подставь свой клиентский URL
+    origin: 'http://localhost:5000',
     credentials: true
 }));
 
 app.use(cookieParser());
 app.use(helmet());
 app.use(express.json());
-app.use(errorHandler);
 
-const csrfProtection = csrf({cookie: true});
+const csrfProtection = csrf({ cookie: true });
 app.use(csrfProtection);
+
 app.use((req, res, next) => {
-    console.log('🔍 Запрос:', req.method, req.url);
-    console.log('🔍 Cookies:', req.cookies);
-    console.log('🔍 Заголовки:', req.headers);
+    log(`Request: ${req.method} ${req.url} | IP: ${req.ip}`);
     next();
 });
 
@@ -44,14 +42,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/images', imageRoutes);
 
-// Обработчик ошибок
-app.use((err, req, res, next) => {
-    console.error(err.stack || err);
-    res.status(err.status || 500).json({
-        message: err.message || 'Something went wrong on the server',
-    });
-});
-
 app.use((req, res, next) => {
     if (!req.secure) {
         return res.redirect("https://" + req.headers.host + req.url);
@@ -60,12 +50,13 @@ app.use((req, res, next) => {
 });
 
 app.get('/csrf-token', (req, res) => {
-    res.json({csrfToken: req.csrfToken});
-})
-
-// Тестовый маршрут
-app.get('/', (req, res) => {
-    res.send('🚀 Server works! You are welcome');
+    res.json({ csrfToken: req.csrfToken() });
 });
+
+app.get('/', (req, res) => {
+    res.send('Server is running.');
+});
+
+app.use(errorHandler);
 
 export default app;

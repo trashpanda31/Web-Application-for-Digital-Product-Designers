@@ -2,46 +2,52 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import { log, logSecurity } from '../utils/logger.js';
+
+
 
 dotenv.config();
 
-// 🔹 Константы токенов
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
   try {
-    const { username, email, password, firstName, lastName } = req.body;
+    const { username, email, password, confirmPassword, firstName, lastName } = req.body;
 
-    // 1️⃣ Проверяем, переданы ли все обязательные поля
-    if (!firstName || !lastName || !username || !email || !password) {
+    if (!firstName || !lastName || !username || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // 2️⃣ Проверяем, существует ли уже такой пользователь
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long and contain at least one letter and one number' });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // 3️⃣ Хешируем пароль
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4️⃣ Создаем нового пользователя (аватар пока пустой)
     const user = new User({
       username,
       email,
       password: hashedPassword,
-      firstName,   // 👤 Обязательное поле
-      lastName,    // 👤 Обязательное поле
-      avatar: '',  // 🖼 Оставляем пустым, можно обновить позже
+      firstName,
+      lastName,
+      avatar: '',
     });
 
     await user.save();
+    log(`New user registered: ${email}`);
 
-    // 5️⃣ Отправляем успешный ответ
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -49,55 +55,49 @@ export const register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Register Error:', error);
-    res.status(500).json({ message: 'Server Error' });
+    next(error);
   }
 };
 
-
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Проверка наличия пользователя
     const user = await User.findOne({ email });
     if (!user) {
+      logSecurity(`Failed login attempt: non-existent email ${email}`);
       return res.status(400).json({ message: 'User does not exist' });
     }
 
-    // Проверка пароля
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      logSecurity(`Failed login attempt: incorrect password for ${email}`);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Генерация токенов
     const accessToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     const refreshToken = jwt.sign({ userId: user._id }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
 
-    // Сохранение refreshToken в базе
     user.refreshToken = refreshToken;
     await user.save();
 
-    // Установка refreshToken в куки
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Только HTTPS в продакшене
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    log(`User logged in: ${email}`);
     res.status(200).json({ accessToken });
+
   } catch (error) {
-    console.error('Login Error:', error);
-    res.status(500).json({ message: 'Server Error' });
+    next(error);
   }
 };
 
-export const refreshToken = async (req, res) => {
+export const refreshToken = async (req, res, next) => {
   try {
-    console.log('Cookies received:', req.cookies);
-
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
       return res.status(401).json({ message: 'No refresh token, access denied' });
@@ -118,27 +118,27 @@ export const refreshToken = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    next(error);
   }
 };
 
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
     if (!refreshToken) return res.sendStatus(204);
 
-    // Очистка refreshToken в базе
     const user = await User.findOne({ refreshToken });
     if (!user) return res.sendStatus(204);
 
     user.refreshToken = null;
     await user.save();
 
-    // Удаление куки
     res.clearCookie('refreshToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+
+    log(`User logged out: ${user.email}`);
     res.status(200).json({ message: 'Logged out successfully' });
+
   } catch (error) {
-    console.error('Logout Error:', error);
-    res.status(500).json({ message: 'Server Error' });
+    next(error);
   }
 };
