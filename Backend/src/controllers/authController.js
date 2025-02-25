@@ -4,14 +4,12 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import { log, logSecurity } from '../utils/logger.js';
 
-
-
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN;
 
 export const register = async (req, res, next) => {
   try {
@@ -19,6 +17,11 @@ export const register = async (req, res, next) => {
 
     if (!firstName || !lastName || !username || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // ✅ Проверка формата email (должен содержать @ и домен)
+    if (!/^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
     }
 
     if (password !== confirmPassword) {
@@ -61,35 +64,57 @@ export const register = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, confirmPassword } = req.body;
+
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+    if (!password) return res.status(400).json({ success: false, message: "Password is required" });
+    if (!confirmPassword) return res.status(400).json({ success: false, message: "Confirm Password is required" });
+
+    if (!/^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      return res.status(400).json({ success: false, message: "Invalid email format" });
+    }
 
     const user = await User.findOne({ email });
     if (!user) {
       logSecurity(`Failed login attempt: non-existent email ${email}`);
-      return res.status(400).json({ message: 'User does not exist' });
+      return res.status(400).json({ success: false, message: "User does not exist" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       logSecurity(`Failed login attempt: incorrect password for ${email}`);
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ success: false, message: "Incorrect password" });
     }
 
-    const accessToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    const refreshToken = jwt.sign({ userId: user._id }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
+    if (password !== confirmPassword) {
+      logSecurity(`Failed login attempt: password mismatch for ${email}`);
+      return res.status(400).json({ success: false, message: "Passwords do not match" });
+    }
+
+    const accessToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || "default_secret",
+      { expiresIn: process.env.JWT_EXPIRES_IN}
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET || "refresh_secret",
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN}
+    );
 
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     log(`User logged in: ${email}`);
-    res.status(200).json({ accessToken });
+    res.status(200).json({ success: true, message: "Login successful", accessToken });
 
   } catch (error) {
     next(error);

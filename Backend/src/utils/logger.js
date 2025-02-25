@@ -25,7 +25,6 @@ const writeLog = (filePath, message) => {
     });
 };
 
-
 export const log = (message) => writeLog(logFilePath, `INFO: ${message}`);
 export const logError = (error) => writeLog(errorLogPath, `ERROR: ${error.stack || error}`);
 export const logSecurity = (message) => writeLog(securityLogPath, `SECURITY: ${message}`);
