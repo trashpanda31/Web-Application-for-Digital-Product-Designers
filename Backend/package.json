@@ -36,9 +36,6 @@
   "devDependencies": {
     "eslint": "^9.17.0",
     "nodemon": "^3.1.9",
-    "rollup": "^4.34.8",
-    "passport-google-oauth20": "^2.0.0",
-    "passport-gitlab2": "^1.0.0",
-    "express-session": "^1.17.3"
+    "rollup": "^4.34.8"
   }
 }
