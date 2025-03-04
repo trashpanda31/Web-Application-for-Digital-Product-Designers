@@ -4,29 +4,24 @@ import { Strategy as GitLabStrategy } from 'passport-gitlab2';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
 import { generateAccessToken, generateRefreshToken } from '../services/authService.js';
+import { log } from '../utils/logger.js';  // ✅ Импорт логгера
 
 dotenv.config();
 
 passport.serializeUser((user, done) => {
-    if (!user || !user._id) {
-        return done(new Error("User ID is missing"));
-    }
     done(null, user._id.toString());
 });
 
 passport.deserializeUser(async (id, done) => {
     try {
         const user = await User.findById(id);
-        if (!user) {
-            return done(new Error("User not found"));
-        }
         done(null, user);
     } catch (error) {
         done(error, null);
     }
 });
 
-// ✅ Google OAuth
+// ✅ Google OAuth (Добавляем логирование успешного входа)
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_ID,
     clientSecret: process.env.GOOGLE_SECRET,
@@ -48,11 +43,13 @@ passport.use(new GoogleStrategy({
             });
         }
 
-        // ✅ Генерируем токены
         user.refreshToken = generateRefreshToken(user._id);
         await user.save();
-
         user.accessToken = generateAccessToken(user._id);
+
+        // ✅ Логируем успешный вход через Google
+        log(`OAuth Login: Google | Email: ${user.email} | IP: ${profile._json.ip || 'unknown'}`);
+
         return done(null, user);
     } catch (err) {
         console.error('Google OAuth Error:', err);
@@ -60,7 +57,7 @@ passport.use(new GoogleStrategy({
     }
 }));
 
-// ✅ GitLab OAuth
+// ✅ GitLab OAuth (Добавляем логирование успешного входа)
 passport.use(new GitLabStrategy({
     clientID: process.env.GITLAB_CLIENT_ID,
     clientSecret: process.env.GITLAB_CLIENT_SECRET,
@@ -83,11 +80,13 @@ passport.use(new GitLabStrategy({
             });
         }
 
-        // ✅ Генерируем токены
         user.refreshToken = generateRefreshToken(user._id);
         await user.save();
-
         user.accessToken = generateAccessToken(user._id);
+
+        // ✅ Логируем успешный вход через GitLab
+        log(`OAuth Login: GitLab | Email: ${user.email} | IP: ${profile._json.ip || 'unknown'}`);
+
         return done(null, user);
     } catch (err) {
         console.error('GitLab OAuth Error:', err);
