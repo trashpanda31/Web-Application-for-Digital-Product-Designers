@@ -7,6 +7,7 @@ import app from './app.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { log, logError } from './utils/logger.js';
+import {initGridFS} from "./config/gridfs.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ log(`Connecting to MongoDB...`);
 mongoose
     .connect(MONGODB_URI)
     .then(() => log('MongoDB connected'))
+    initGridFS()
     .catch((err) => {
         logError(`Failed to connect to MongoDB: ${err}`);
         process.exit(1);
@@ -42,4 +44,3 @@ http.createServer((req, res) => {
 https.createServer(options, app).listen(PORT_HTTPS, () => {
     log(`Server is running on https://localhost:${PORT_HTTPS}`);
 });
-
