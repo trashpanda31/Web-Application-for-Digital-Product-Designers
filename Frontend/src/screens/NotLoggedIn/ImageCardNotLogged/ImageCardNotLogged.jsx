@@ -150,7 +150,6 @@ export const ImageCardNotLogged = () => {
             ))
           )}
         </div>
-
         <footer className="w-full flex flex-col items-center mt-20 mb-8">
           <img className="w-[307px] h-[78px] object-cover mb-4" alt="Logo" src="/img/logo.png" />
           <div className="[font-family:'Gilroy-Medium',Helvetica] font-normal text-black text-xl tracking-[0] leading-[normal] whitespace-nowrap mb-2">
