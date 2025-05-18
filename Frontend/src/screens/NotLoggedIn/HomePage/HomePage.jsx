@@ -169,7 +169,7 @@ export const HomePage = () => {
               </div>
             </div>
           </header>
-
+          <main>
           <section className="hero">
             <p className="absolute w-[533px] top-[163px] left-[453px] [font-family:'Gilroy-SemiBold',Helvetica] font-normal text-black text-[40px] text-center tracking-[0] leading-[normal]">
               Discover high-quality visuals for every creative need
@@ -272,7 +272,7 @@ export const HomePage = () => {
               </div>
             </Link>
           </section>
-
+          </main>
           <footer className={`absolute w-[1440px] h-72 top-[2016px] left-0 flex flex-col items-center justify-center ${transitionClass} ${contentShiftClass}`}>
             <img className="w-[307px] h-[78px] mb-6"
                  alt="Logo"
