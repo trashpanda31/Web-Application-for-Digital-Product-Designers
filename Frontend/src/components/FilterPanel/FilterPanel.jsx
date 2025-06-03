@@ -31,19 +31,24 @@ const FILTER_OPTIONS = {
   }
 };
 
-export const FilterPanel = ({ containerClassName = '', buttonClassName = '', textClassName = '', onFilterChange, initialFilters = {} }) => {
+export const FilterPanel = ({ containerClassName = '', buttonClassName = '', textClassName = '', onFilterChange, initialFilters = {}, shouldPersistFilters = false }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [selectedFilters, setSelectedFilters] = useState(() => {
-    const savedFilters = localStorage.getItem('filterPanelFilters');
-    return savedFilters ? JSON.parse(savedFilters) : initialFilters;
+    if (shouldPersistFilters) {
+      const savedFilters = localStorage.getItem('filterPanelFilters');
+      return savedFilters ? JSON.parse(savedFilters) : initialFilters;
+    }
+    return initialFilters;
   });
 
   useEffect(() => {
     if (onFilterChange) {
       onFilterChange(selectedFilters);
     }
-    localStorage.setItem('filterPanelFilters', JSON.stringify(selectedFilters));
-  }, [selectedFilters, onFilterChange]);
+    if (shouldPersistFilters) {
+      localStorage.setItem('filterPanelFilters', JSON.stringify(selectedFilters));
+    }
+  }, [selectedFilters, onFilterChange, shouldPersistFilters]);
 
   useEffect(() => {
     if (initialFilters && Object.keys(initialFilters).length > 0) {

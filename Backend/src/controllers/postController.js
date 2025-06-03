@@ -192,9 +192,53 @@ function countBits(n) {
 
 export const searchPostsByTitle = async (req, res) => {
     try {
-        const { query } = req.query;
-        const posts = await Post.find({ title: { $regex: query, $options: 'i' } })
+        const { query, type } = req.query;
+        let posts = await Post.find({ title: { $regex: query, $options: 'i' } })
             .populate('userId', 'username avatarUrl');
+
+        if (type === 'popular') {
+            posts.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
+        } else if (type === 'relevant') {
+            const postsWithCounts = await Post.aggregate([
+                { $match: { title: { $regex: query, $options: 'i' } } },
+                {
+                    $lookup: {
+                        from: 'comments',
+                        localField: '_id',
+                        foreignField: 'postId',
+                        as: 'commentsArr'
+                    }
+                },
+                {
+                    $addFields: {
+                        commentsCount: { $size: '$commentsArr' },
+                        likesCount: { $size: '$likes' },
+                        recentnessScore: {
+                            $divide: [1, { $add: [{ $divide: [{ $subtract: [new Date(), '$createdAt'] }, 1000 * 60 * 60 * 24] }, 1] }]
+                        }
+                    }
+                },
+                {
+                    $addFields: {
+                        relevance: {
+                            $add: [
+                                { $multiply: ['$likesCount', 2] },
+                                '$commentsCount',
+                                '$recentnessScore'
+                            ]
+                        }
+                    }
+                },
+                { $sort: { relevance: -1 } }
+            ]);
+            const ids = postsWithCounts.map(p => p._id);
+            posts = await Post.find({ _id: { $in: ids } })
+                .populate('userId', 'username avatarUrl')
+                .lean();
+            posts = ids.map(id => posts.find(p => p._id.toString() === id.toString()));
+        } else {
+            posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
         res.json(posts);
     } catch (error) {
         res.status(500).json({ message: 'Error while searching by title', error: error.message });

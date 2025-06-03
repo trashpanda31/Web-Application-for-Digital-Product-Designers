@@ -16,7 +16,7 @@ export const HomePageLoggedIn = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState(() => {
-    const savedFilters = localStorage.getItem('homeFilters');
+    const savedFilters = localStorage.getItem('filterPanelFilters');
     return savedFilters ? JSON.parse(savedFilters) : {};
   });
   const [sort, setSort] = useState(() => {
@@ -34,7 +34,9 @@ export const HomePageLoggedIn = () => {
   const [pmUser, setPmUser] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('homeFilters', JSON.stringify(filters));
+    if (filters && Object.keys(filters).length > 0) {
+      localStorage.setItem('filterPanelFilters', JSON.stringify(filters));
+    }
   }, [filters]);
 
   useEffect(() => {
@@ -53,8 +55,10 @@ export const HomePageLoggedIn = () => {
     if (search) {
       if (search.startsWith('#')) {
         url = `/api/posts/filter?tags=${encodeURIComponent(search.slice(1))}&limit=16&page=${pageToLoad}`;
+        if (sort) url += `&type=${sort}`;
       } else {
         url = `/api/posts/search?query=${encodeURIComponent(search)}&limit=16&page=${pageToLoad}`;
+        if (sort) url += `&type=${sort}`;
       }
     } else if ((filters && Object.keys(filters).length > 0) || sort) {
       const params = new URLSearchParams({ ...filters, limit: 16, page: pageToLoad });
@@ -251,7 +255,8 @@ export const HomePageLoggedIn = () => {
               containerClassName="flex gap-[86px]"
               buttonClassName="w-[109px] h-[39px] flex items-center justify-center"
               textClassName="[font-family:'Gilroy-Medium',Helvetica] font-normal text-black text-sm"
-              onFilterChange={setFilters}/>
+              onFilterChange={setFilters}
+              shouldPersistFilters={true}/>
           </div>
 
           <div className="grid grid-cols-4 gap-x-6 gap-y-6">

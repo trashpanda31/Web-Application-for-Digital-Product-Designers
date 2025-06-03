@@ -297,7 +297,8 @@ export const NewPost = ({ onClose, onPostCreated, editingPost, onPostUpdated }) 
             buttonClassName="w-[109px] h-[39px] flex items-center justify-center"
             textClassName="[font-family:'Gilroy-Medium',Helvetica] font-normal text-black text-sm"
             onFilterChange={setFilters}
-            initialFilters={editingPost?.filters}/>
+            initialFilters={editingPost?.filters}
+            shouldPersistFilters={false}/>
         </div>
 
         <div className="absolute w-[109px] h-[39px] top-[301px] left-[616px]">

@@ -4,10 +4,18 @@ import {Link, useNavigate} from "react-router-dom";
 export const LogInOauth = () => {
   const navigate = useNavigate();
 
+  const handleBackClick = () => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
     <div className="bg-[#f7faff] min-h-screen flex flex-row justify-center w-full">
       <div className="bg-[#f7faff] w-[1440px] h-[705px] relative">
-        <div onClick={() => navigate(-1)}
+        <div onClick={handleBackClick}
             className="cursor-pointer absolute w-[39px] h-[38px] top-[137px] left-[106px] bg-[#f8faff] rounded-[19.5px/19px] border border-solid border-black">
           <img className="absolute w-6 h-6 top-1.5 left-[7px]"
                alt="Arrow left"

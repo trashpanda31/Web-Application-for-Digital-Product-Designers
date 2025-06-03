@@ -16,7 +16,7 @@ export const HomePage = () => {
   const [imageSearchLoading, setImageSearchLoading] = useState(false);
   const [csrfToken, setCsrfToken] = useState(null);
   const [filters, setFilters] = useState(() => {
-    const savedFilters = localStorage.getItem('homeFilters');
+    const savedFilters = localStorage.getItem('filterPanelFilters');
     return savedFilters ? JSON.parse(savedFilters) : {};
   });
   const [sort, setSort] = useState(() => {
@@ -25,7 +25,9 @@ export const HomePage = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem('homeFilters', JSON.stringify(filters));
+    if (filters && Object.keys(filters).length > 0) {
+      localStorage.setItem('filterPanelFilters', JSON.stringify(filters));
+    }
   }, [filters]);
 
   useEffect(() => {
@@ -37,8 +39,10 @@ export const HomePage = () => {
     if (search) {
       if (search.startsWith('#')) {
         url = `/api/posts/filter?tags=${encodeURIComponent(search.slice(1))}&limit=16`;
+        if (sort) url += `&type=${sort}`;
       } else {
         url = `/api/posts/search?query=${encodeURIComponent(search)}&limit=16`;
+        if (sort) url += `&type=${sort}`;
       }
     } else if ((filters && Object.keys(filters).length > 0) || sort) {
       const params = new URLSearchParams({ ...filters, limit: 16 });
@@ -211,7 +215,8 @@ export const HomePage = () => {
               <FilterPanel containerClassName="flex gap-[86px]"
                   buttonClassName="w-[109px] h-[39px] bg-[#d9d9d9] rounded-[14px] flex items-center justify-center border-none outline-none cursor-pointer"
                   textClassName="[font-family:'Gilroy-Medium',Helvetica] font-normal text-black text-sm"
-                  onFilterChange={setFilters}/>
+                  onFilterChange={setFilters}
+                  shouldPersistFilters={true}/>
             </div>
 
             <div className="grid grid-cols-4 gap-x-6 gap-y-6">
